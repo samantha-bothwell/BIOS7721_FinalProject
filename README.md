@@ -1,1 +1,3 @@
-BIOS7721_FinalProject
+## BIOS 7721 Final Project
+
+The purpose of this course is to explore methods of joint modeling with longitudinal and survival data. This final project is a simulation study.....
