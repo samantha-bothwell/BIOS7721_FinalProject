@@ -45,28 +45,31 @@ id <- rep(1:N, K)
 # Random measurement times: 
 # times <- c(replicate(N, c(0, sort(runif(K-1, 0, t.max))))) #uniform 
 # Can you do it for a poisson process? (Hint: you might need the "cumsum" function)
-msmt.times <- c(replicate(N, c(0, cumsum(rpois(K-1, 1)))))
-msmt.times <- lapply(K, function(i){c(0, cumsum(rpois(K-1, 1)))})
+msmt.times <- vector()
+for (i in 1:length(K)){
+  msmt.times <- c(msmt.times, c(0, cumsum(rpois(K[i] - 1, 1))))
+}
+
 
 # 3. Begin creating your data set
-dat <- 
+dat <- data.frame(ID = id, Year = msmt.times)
 
 # 4. Create design matrices X and Z 
 # X: design matrix for fixed effects (should have as many columns as elements in "betas")
-# Z: design  matrix for random effects (should have as many columns as elements in "A")
-X <- 
-Z <- 
+# Z: design matrix for random effects (should have as many columns as elements in "A")
+X <- matrix(cbind(rep(1, length(id)), msmt.times), ncol = 2)
+Z <- matrix(cbind(rep(1, length(id)), msmt.times), ncol = 2)
 
 # 5. Simulate random effects
 # b: simulated random effects b using covariance matrix A 
-b <- 
+b <- c(mean(rnorm(1, 0, A[1])), mean(rnorm(1, 0, A[4])))
 
 # 6. Simulate longitudinal responses
-eta.y <- #Xi'(t)*beta+zi'(t)*bi
-y <- #~Normal(mean=eta.y, sd=sigma.y) 
+eta.y <- t(X)*betas + t(Z)*b #Xi'(t)*beta+zi'(t)*bi
+y <- rnorm(length(id), mean=eta.y, sd = sigma.y) #~Normal(mean=eta.y, sd=sigma.y) 
 
 # 7. Add longitudinal responses to data set 
-                                                   
+dat$resp <- y                                                   
                                                    
                                                    
                                                    
