@@ -69,7 +69,89 @@ eta.y <- t(X)*betas + t(Z)*b #Xi'(t)*beta+zi'(t)*bi
 y <- rnorm(length(id), mean=eta.y, sd = sigma.y) #~Normal(mean=eta.y, sd=sigma.y) 
 
 # 7. Add longitudinal responses to data set 
-dat$resp <- y                                                   
+dat$resp <- y 
+
+
+
+# Survival submodel ---------------------------------------------------------------------------
+# 1. Write a function of the hazard for each individual as a function of "s" (time) and "u" (a uniform
+# random variable) 
+# Integrate this function w.r.t "s" over the interval (0,t), where you want to solve for "t" 
+invS <- function (t, u, i) {
+  #inverse function used to obtain survival time 
+  #t: time 
+  #u: draw from a uniform[0,1] distribution
+  #i: patient id indicator 
+  h <- function (s) {
+    #hazard function (based on survival and longitudinal submodels)
+    XX <- 
+      ZZ <-  
+      m <-  
+      haz <- h0*exp(alpha*m)
+    return(haz)
+  }
+  integrate(h, lower = 0, upper = t)$value + log(u) 
+}
+
+# 2. Solve for survival times 
+u <- runif(N) #generate random U[0,1] random variable 
+trueTimes <- numeric(N) #initiate vector of true survival times
+for (i in 1:N) {
+  # Solve for true survival time (Hint: use "uniroot" function)
+  # Wrap the uniroot function in "try" since for some individuals you will not return a valid 
+  # survival time (we will consider those patients "cured" and assign then survival time of
+  # infinity)
+  Root <- #Example: try(uniroot(, TRUE))
+    # "Cure" patients have event time set to Infinity 
+    trueTimes[i] <- ifelse(inherits(Root, "try-error"),Inf,Root)
+}
+
+# 3. Simulate censoring times 
+Ctimes <- 
+  
+  # 4. Compute observed survival time and event indicator (don't forget that there 
+  # is a max follow-up time)
+  Time <-  
+  event <-  
+  
+  
+  # 5. Add in survival time and indicator to data set 
+  
+  
+  # 6. Drop measurement times that occur after follow-up time 
+  # This should then be your longitudinal data set
+  
+  # 7. Create a data set with one row for each individual (for survival submodel)
+  
+  # Plots of simulated data set -----------------------------------------------------------------
+# Does your simulated data look correct? 
+## Consider: KM curves 
+# plot(Surv(survtime,event)~1, data=dat)
+# ## Consider: plot of the longitudinal biomarker 
+# table(table(dat$id))
+
+
+# Fit models --------------------------------------------------------------
+# 1. Fit joint model
+# use method="weibull-PH-aGH" to decrease computation time 
+
+
+# 2. Fit two-stage model 
+
+
+# Save appropriate coefficient estimates
+# Check that these are close to the true value before you run for 500 runs! 
+
+# Compute summary metrics  ------------------------------------------------
+
+# Compute the appropriate metrics 
+
+# Create tables/figures to appropriately summarize the results 
+
+
+
+
+
                                                    
                                                    
                                                    
