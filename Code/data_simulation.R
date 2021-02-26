@@ -18,6 +18,8 @@ rm(list=ls())
 
 ## Packages
 library(survival)
+library(nlme)
+library(JM)
 
 # Simulation settings
 set.seed(7721)
@@ -126,7 +128,7 @@ dat$event = rep(event, each = K)
 dat <- dat[dat$Time <= dat$Survtime,]
 
 # 7. Create a data set with one row for each individual (for survival submodel)
-dat <- dat %>% group_by(ID) %>% slice(1)
+dat.id <- dat %>% group_by(ID) %>% slice(1)
 
 # Plots of simulated data set -----------------------------------------------------------------
 # Does your simulated data look correct? 
@@ -134,18 +136,59 @@ dat <- dat %>% group_by(ID) %>% slice(1)
 # plot(Surv(Survtime,event)~1, data=dat)
 # ## Consider: plot of the longitudinal biomarker 
 # table(table(dat$ID))
+# sum(dat.id$event)/N
 
 
 # Fit models --------------------------------------------------------------
 # 1. Fit joint model
 # use method="weibull-PH-aGH" to decrease computation time 
+# a. longitudinal submodel 
+start_joint <- Sys.time()
+lme.Fit <- lme(y ~ Time, random = ~ Time | ID, data = dat)
+
+# b. survival submodel
+surv.Fit <- coxph(Surv(Survtime, event) ~ 1, data = dat.id, x = TRUE)
+
+# c. Joint model with piecewise-constant baseline hazard with 
+# d. Adaptive GH numeric integration
+joint.Fit <- jointModel(lme.Fit, surv.Fit, timeVar = "Time", method = "weibull-PH-aGH")
+end_joint <- Sys.time()
+time_joint <- as.numeric(end_joint - start_joint)
 
 
 # 2. Fit two-stage model 
+# merge data to get start and stop times
+start_stop <- tmerge(dat.id, dat.id, ID, death = event(Survtime, event))
 
+# merge with original data to get longitudinal start and stop times at each visit for an individual
+start_stop <- tmerge(start_stop, dat, ID, y = tdc(Time, y))
+
+# lme fit with start and stop times 
+start_2stage <- Sys.time()
+lme.Fit2 <- lme(y ~  tstart, random = ~ tstart | ID, data = start_stop)
+
+# add predictions to the data 
+start_stop$pred.y <- c(predict(lme.Fit2))
+
+# Two-Stage model with time-varying sqrt aortic gradient
+cox.Fit <- coxph(Surv(tstart, tstop, death) ~ pred.y, data = start_stop)
+end_2stage <- Sys.time()
+time_2stage <- as.numeric(end_2stage - start_2stage)
 
 # Save appropriate coefficient estimates
 # Check that these are close to the true value before you run for 500 runs! 
+
+# Joint model 
+joint.Fit$coefficients$betas
+joint.Fit$coefficients$alpha #Association
+joint.Fit$coefficients$sigma
+sqrt(diag(joint.Fit$coefficients$D)) #varcov
+
+# Two-Stage model 
+coef(summary(lme.Fit2))[,1]
+coef(cox.Fit)
+summary(lme.Fit2)$sigma
+VarCorr(lme.Fit2)[c(1,2),2]
 
 # Compute summary metrics  ------------------------------------------------
 
