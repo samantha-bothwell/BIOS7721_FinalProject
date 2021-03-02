@@ -42,11 +42,11 @@ sim = 500
 dat.joint <- data.frame(matrix(NA, nrow = sim, ncol = 10))
 colnames(dat.joint) <- c("Assoc", "Beta0", "Beta1", "Sigma", "A11", "A22", "SE0", "SE1", "SEy", "Time")
 dat.2stage <- data.frame(matrix(NA, nrow = sim, ncol = 9))
-colnames(dat.2stage) <- c("Assoc", "Beta0", "Beta1", "Sigma", "A11", "A22", "SE0", "SE1", "Time")
+colnames(dat.2stage) <- c("Assoc", "Beta0", "Beta1", "Sigma", "A11", "A22", "SE0", "SE1", "SEy", "Time")
 
 
 # Simulation 
-for (i in 1:sim){
+for (j in 1:sim){
   # Longitudinal submodel ---------------------------------------------------
   # 1. Generate the id variable (each individual has K measurements)
   id <- rep(1:N, each = K)
@@ -115,7 +115,7 @@ for (i in 1:sim){
     # survival time (we will consider those patients "cured" and assign them survival time of
     # infinity)
     surv <- function(t){ invS(t, u = u[i], i = i)}
-    Root <- try(uniroot(surv, interval = c(0, 10))$root)
+    Root <- try(uniroot(surv, interval = c(0, 10), extendInt = "upX")$root)
     # "Cure" patients have event time set to Infinity 
     trueTimes[i] <- ifelse(inherits(Root, "try-error"),Inf,Root)
   }
@@ -189,36 +189,160 @@ for (i in 1:sim){
   # Check that these are close to the true value before you run for 500 runs! 
   
   # Joint model 
-  dat.joint[i, 1] <- joint.Fit$coefficients$alpha #Association
-  dat.joint[i, 2] <- joint.Fit$coefficients$betas[1]
-  dat.joint[i, 3] <- joint.Fit$coefficients$betas[2]
-  dat.joint[i, 4] <- joint.Fit$coefficients$sigma
-  dat.joint[i, 5] <- sqrt(diag(joint.Fit$coefficients$D))[1] #varcov
-  dat.joint[i, 6] <- sqrt(diag(joint.Fit$coefficients$D))[2]
+  dat.joint[j, 1] <- joint.Fit$coefficients$alpha #Association
+  dat.joint[j, 2] <- joint.Fit$coefficients$betas[1]
+  dat.joint[j, 3] <- joint.Fit$coefficients$betas[2]
+  dat.joint[j, 4] <- joint.Fit$coefficients$sigma
+  dat.joint[j, 5] <- sqrt(diag(joint.Fit$coefficients$D))[1] #varcov
+  dat.joint[j, 6] <- sqrt(diag(joint.Fit$coefficients$D))[2]
   
-  dat.joint[i, 7] <- summary(joint.Fit)$`CoefTable-Long`[1,2] #asymptotic standard errors for long
-  dat.joint[i, 8] <- summary(joint.Fit)$`CoefTable-Long`[2,2] #asymptotic standard errors for long
-  dat.joint[i, 9] <- summary(joint.Fit)$`CoefTable-Event`[2,2] #asymptotic standard error for assoc
+  dat.joint[j, 7] <- summary(joint.Fit)$`CoefTable-Long`[1,2] #asymptotic standard errors for long
+  dat.joint[j, 8] <- summary(joint.Fit)$`CoefTable-Long`[2,2] #asymptotic standard errors for long
+  dat.joint[j, 9] <- summary(joint.Fit)$`CoefTable-Event`[2,2] #asymptotic standard error for assoc
   
-  dat.joint[i, 10] <- time_joint
+  dat.joint[j, 10] <- time_joint
   
   # Two-Stage model 
-  dat.2stage[i, 1] <- coef(cox.Fit)
-  dat.2stage[i, 2] <- coef(summary(lme.Fit2))[1,1]
-  dat.2stage[i, 3] <- coef(summary(lme.Fit2))[2,1]
-  dat.2stage[i, 4] <- summary(lme.Fit2)$sigma
-  dat.2stage[i, 5] <- as.numeric(VarCorr(lme.Fit2)[1,2])
-  dat.2stage[i, 6] <- as.numeric(VarCorr(lme.Fit2)[2,2])
+  dat.2stage[j, 1] <- coef(cox.Fit)
+  dat.2stage[j, 2] <- coef(summary(lme.Fit2))[1,1]
+  dat.2stage[j, 3] <- coef(summary(lme.Fit2))[2,1]
+  dat.2stage[j, 4] <- summary(lme.Fit2)$sigma
+  dat.2stage[j, 5] <- as.numeric(VarCorr(lme.Fit2)[1,2])
+  dat.2stage[j, 6] <- as.numeric(VarCorr(lme.Fit2)[2,2])
   
-  dat.2stage[i, 7] <- coef(summary(lme.Fit2))[1,2] #asymptotic standard errors for long
-  dat.2stage[i, 8] <- coef(summary(lme.Fit2))[2,2] #asymptotic standard errors for long
-  dat.2stage[i, 9] <- coef(summary(cox.Fit))[3] #asymptotic standard error for y (assoc)
+  dat.2stage[j, 7] <- coef(summary(lme.Fit2))[1,2] #asymptotic standard errors for long
+  dat.2stage[j, 8] <- coef(summary(lme.Fit2))[2,2] #asymptotic standard errors for long
+  dat.2stage[j, 9] <- coef(summary(cox.Fit))[3] #asymptotic standard error for y (assoc)
   
-  dat.2stage[i, 10] <- time_2stage
+  dat.2stage[j, 10] <- time_2stage
 }
 # Compute summary metrics  ------------------------------------------------
 
+dat.2stage <- read.csv("D:/CU/Spring 2021/BIOS 7721/BIOS7721_FinalProject/Data/2stage.csv")[,-1]
+dat.joint <- read.csv("D:/CU/Spring 2021/BIOS 7721/BIOS7721_FinalProject/Data/Joint.csv")[,-1]
+
+
+# True parameter values ---------------------------------------------------
+betas <- c(-0.2, 0.3) #betas for longitudinal model
+sigma.y <-  0.5 #measurement error standard deviation
+A <- matrix(c(0.5, 0, 0, 0.3), ncol = 2) #covariance matrix for random effects
+alpha <- 0.6 #association parameter
+h0 <- 0.1 #constant baseline hazard
+sim <- 500
+
+
 # Compute the appropriate metrics 
+# true <- c(alpha, betas[1], betas[2], sigma.y, A[1], A[4])
+
+## Empirical bias 
+bias.2stage <- data.frame(cbind(alpha = mean(dat.2stage$Assoc) - alpha,
+  b0 = mean(dat.2stage$Beta0) - betas[1],
+  b1 = mean(dat.2stage$Beta1) - betas[2],
+  sigma = mean(dat.2stage$Sigma) - sigma.y,
+  A11 = mean(dat.2stage$A11) - A[1],
+  A22 = mean(dat.2stage$A22) - A[4]))
+
+bias.joint <- data.frame(cbind(alpha = mean(dat.joint$Assoc) - alpha,
+  b0 = mean(dat.joint$Beta0) - betas[1],
+  b1 = mean(dat.joint$Beta1) - betas[2],
+  sigma = mean(dat.joint$Sigma) - sigma.y,
+  A11 = mean(dat.joint$A11) - A[1],
+  A22 = mean(dat.joint$A22) - A[4]))
+
+## Asymptotic SE
+asy.se.2stage <- data.frame(cbind(b0 = mean(dat.2stage$SE0),
+  b1 = mean(dat.2stage$SE1),
+  y = mean(dat.2stage$SEy)))
+
+asy.se.joint <- data.frame(cbind(b0 = mean(dat.joint$SE0),
+  b1 = mean(dat.joint$SE1),
+  y = mean(dat.joint$SEy)))
+
+## Empirical SE
+emp.se.2stage <- data.frame(cbind(b0 = sd(dat.2stage$Beta0),
+  b1 = sd(dat.2stage$Beta1),
+  y = sd(dat.2stage$Assoc)), 
+  sigma = sd(dat.2stage$Sigma), 
+  A11 = sd(dat.2stage$A11), 
+  A22 = sd(dat.2stage$A22))
+
+emp.se.joint <- data.frame(cbind(b0 = sd(dat.joint$Beta0),
+  b1 = sd(dat.joint$Beta1),
+  y = sd(dat.joint$Assoc)), 
+  sigma = sd(dat.joint$Sigma), 
+  A11 = sd(dat.joint$A11), 
+  A22 = sd(dat.joint$A22))
+
+
+## Mean Square Error
+mse.2stage <- data.frame(cbind(alpha = sum((dat.2stage$Assoc - alpha)^2)/sim,
+  b0 = sum((dat.2stage$Beta0 - betas[1])^2)/sim,
+  b1 = sum((dat.2stage$Beta1 - betas[2])^2)/sim,
+  sigma = sum((dat.2stage$Sigma - sigma.y)^2)/sim,
+  A11 = sum((dat.2stage$A11 - A[1])^2)/sim,
+  A22 = sum((dat.2stage$A22 - A[2])^2)/sim))
+
+mse.joint <- data.frame(cbind(alpha = sum((dat.joint$Assoc - alpha)^2)/sim,
+  b0 = sum((dat.joint$Beta0 - betas[1])^2)/sim,
+  b1 = sum((dat.joint$Beta1 - betas[2])^2)/sim,
+  sigma = sum((dat.joint$Sigma - sigma.y)^2)/sim,
+  A11 = sum((dat.joint$A11 - A[1])^2)/sim,
+  A22 = sum((dat.joint$A22 - A[2])^2)/sim))
+
+## Coverage rate 
+conf.2stage <- data.frame(cbind(b0.low = dat.2stage$Beta0 - 1.96*dat.2stage$SE0,
+  b0.up = dat.2stage$Beta0 + 1.96*dat.2stage$SE0,
+  b1.low = dat.2stage$Beta1 - 1.96*dat.2stage$SE1,
+  b1.up = dat.2stage$Beta1 + 1.96*dat.2stage$SE1,
+  y.low = dat.2stage$Assoc - 1.96*dat.2stage$SEy,
+  y.up = dat.2stage$Assoc + 1.96*dat.2stage$SEy))
+
+conf.2stage$b0.cov = ifelse(betas[1] < conf.2stage$b0.low | betas[1] > conf.2stage$b0.up, 0, 1)
+conf.2stage$b1.cov = ifelse(betas[2] < conf.2stage$b1.low | betas[2] > conf.2stage$b1.up, 0, 1)
+conf.2stage$y.cov = ifelse(alpha < conf.2stage$y.low | alpha > conf.2stage$y.up, 0, 1)
+
+conf.joint <- data.frame(b0.low = dat.joint$Beta0 - 1.96*dat.joint$SE0,
+  b0.up = dat.joint$Beta0 + 1.96*dat.joint$SE0,
+  b1.low = dat.joint$Beta1 - 1.96*dat.joint$SE1,
+  b1.up = dat.joint$Beta1 + 1.96*dat.joint$SE1,
+  y.low = dat.joint$Assoc - 1.96*dat.joint$SEy,
+  y.up = dat.joint$Assoc + 1.96*dat.joint$SEy)
+
+conf.joint$b0.cov = ifelse(betas[1] < conf.joint$b0.low | betas[1] > conf.joint$b0.up, 0, 1)
+conf.joint$b1.cov = ifelse(betas[2] < conf.joint$b1.low | betas[2] > conf.joint$b1.up, 0, 1)
+conf.joint$y.cov = ifelse(alpha < conf.joint$y.low | alpha > conf.joint$y.up, 0, 1)
+
+cov.2stage <- data.frame(cbind(b0 = sum(conf.2stage$b0.cov)/sim, 
+  b1 = sum(conf.2stage$b1.cov)/sim, 
+  y = sum(conf.2stage$y.cov)/sim))
+
+cov.joint <- data.frame(cbind(b0 = sum(conf.joint$b0.cov)/sim, 
+  b1 = sum(conf.joint$b1.cov)/sim, 
+  y = sum(conf.joint$y.cov)/sim))
+
+
+## Average comp time 
+time.2stage = mean(dat.2stage$Time)
+time.joint = mean(dat.joint$Time)
+
+
+### combine data 
+sum.2stage = data.frame(cbind(y = c(bias.2stage$y, asy.se.2stage$y, emp.se.2stage$y, mse.2stage$y, cov.2stage$y),
+  b0 = c(bias.2stage$b0, asy.se.2stage$b0, emp.se.2stage$b0, mse.2stage$b0, cov.2stage$b0), 
+  b1 = c(bias.2stage$b1, asy.se.2stage$b1, emp.se.2stage$b1, mse.2stage$b1, cov.2stage$b1), 
+  sigma = c(bias.2stage$sigma, NA, emp.se.2stage$sigma, mse.2stage$sigma, NA), 
+  A11 = c(bias.2stage$A11, NA, emp.se.2stage$A11, mse.2stage$A11, NA), 
+  A22 = c(bias.2stage$A22, NA, emp.se.2stage$A22, mse.2stage$A22, NA)))
+
+sum.joint = data.frame(cbind(y = c(bias.joint$y, asy.se.joint$y, emp.se.joint$y, mse.joint$y, cov.joint$y),
+  b0 = c(bias.joint$b0, asy.se.joint$b0, emp.se.joint$b0, mse.joint$b0, cov.joint$b0), 
+  b1 = c(bias.joint$b1, asy.se.joint$b1, emp.se.joint$b1, mse.joint$b1, cov.joint$b1), 
+  sigma = c(bias.joint$sigma, NA, emp.se.joint$sigma, mse.joint$sigma, NA), 
+  A11 = c(bias.joint$A11, NA, emp.se.joint$A11, mse.joint$A11, NA), 
+  A22 = c(bias.joint$A22, NA, emp.se.joint$A22, mse.joint$A22, NA)))
+
+time = data.frame(cbind(`TwoStage` = time.2stage, `Joint` = time.joint))
+
 
 # Create tables/figures to appropriately summarize the results 
 
