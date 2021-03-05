@@ -235,14 +235,14 @@ sim <- 500
 # true <- c(alpha, betas[1], betas[2], sigma.y, A[1], A[4])
 
 ## Empirical bias 
-bias.2stage <- data.frame(cbind(alpha = mean(dat.2stage$Assoc) - alpha,
+bias.2stage <- data.frame(cbind(y = mean(dat.2stage$Assoc) - alpha,
   b0 = mean(dat.2stage$Beta0) - betas[1],
   b1 = mean(dat.2stage$Beta1) - betas[2],
   sigma = mean(dat.2stage$Sigma) - sigma.y,
   A11 = mean(dat.2stage$A11) - A[1],
   A22 = mean(dat.2stage$A22) - A[4]))
 
-bias.joint <- data.frame(cbind(alpha = mean(dat.joint$Assoc) - alpha,
+bias.joint <- data.frame(cbind(y = mean(dat.joint$Assoc) - alpha,
   b0 = mean(dat.joint$Beta0) - betas[1],
   b1 = mean(dat.joint$Beta1) - betas[2],
   sigma = mean(dat.joint$Sigma) - sigma.y,
@@ -275,14 +275,14 @@ emp.se.joint <- data.frame(cbind(b0 = sd(dat.joint$Beta0),
 
 
 ## Mean Square Error
-mse.2stage <- data.frame(cbind(alpha = sum((dat.2stage$Assoc - alpha)^2)/sim,
+mse.2stage <- data.frame(cbind(y = sum((dat.2stage$Assoc - alpha)^2)/sim,
   b0 = sum((dat.2stage$Beta0 - betas[1])^2)/sim,
   b1 = sum((dat.2stage$Beta1 - betas[2])^2)/sim,
   sigma = sum((dat.2stage$Sigma - sigma.y)^2)/sim,
   A11 = sum((dat.2stage$A11 - A[1])^2)/sim,
   A22 = sum((dat.2stage$A22 - A[2])^2)/sim))
 
-mse.joint <- data.frame(cbind(alpha = sum((dat.joint$Assoc - alpha)^2)/sim,
+mse.joint <- data.frame(cbind(y = sum((dat.joint$Assoc - alpha)^2)/sim,
   b0 = sum((dat.joint$Beta0 - betas[1])^2)/sim,
   b1 = sum((dat.joint$Beta1 - betas[2])^2)/sim,
   sigma = sum((dat.joint$Sigma - sigma.y)^2)/sim,
@@ -346,7 +346,9 @@ time = data.frame(cbind(`TwoStage` = time.2stage, `Joint` = time.joint))
 
 # Create tables/figures to appropriately summarize the results 
 
-
+write.csv(time, "D:/CU/Spring 2021/BIOS 7721/BIOS7721_FinalProject/Data/Time Summary.csv")
+write.csv(sum.2stage, "D:/CU/Spring 2021/BIOS 7721/BIOS7721_FinalProject/Data/2stage Summary.csv")
+write.csv(sum.joint, "D:/CU/Spring 2021/BIOS 7721/BIOS7721_FinalProject/Data/Joint Summary.csv")
 
 
   

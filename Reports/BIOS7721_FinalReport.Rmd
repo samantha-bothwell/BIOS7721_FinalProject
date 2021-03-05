@@ -1,0 +1,121 @@
+---
+output: 
+  pdf_document: default
+---
+
+
+A Simulation Study to Compare Two-Stage Models and Joint Models  
+========================================================
+Samantha Bothwell    |    BIOS 7721 : Joint Modeling    |    March 5th, 2021
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+time <- read.csv("D:/CU/Spring 2021/BIOS 7721/BIOS7721_FinalProject/Data/Time Summary.csv")[,-1]
+dat.2stage <- read.csv("D:/CU/Spring 2021/BIOS 7721/BIOS7721_FinalProject/Data/2stage Summary.csv")[,-1]
+dat.joint <- read.csv("D:/CU/Spring 2021/BIOS 7721/BIOS7721_FinalProject/Data/Joint Summary.csv")[,-1]
+
+library(kableExtra)
+```
+
+### Introduction 
+
+\vspace{-3mm}
+
+Joint and two-stage models are are two methods of understanding the association between longitudinal outcomes and survival outcomes. 
+\vspace{-5mm}
+
+### Methods 
+
+#### Simulation 
+\vspace{-3mm}
+
+All analysis was performed in R, version 4.0.2. The simulation was conducted over 500 data sets, with 250 individuals each. Longitudinal outcomes were simulated under the following linear mixed model framework : 
+
+\vspace{-8mm}
+\[
+y_{ij} = -0.2 + 0.3t + b_{0i} + b_{1i}t + \epsilon_{ij} = m_i(t) + \epsilon_{ij}, \epsilon_{ij} \sim N(0, (0.5)^2), \hspace{2mm} (b_{0i}, b_{1i})' \sim N(0, A) \hspace{2mm} \textrm{with} \hspace{2mm} A = \begin{bmatrix}
+0.5 & 0\\
+0 & 0.3
+\end{bmatrix}
+\]
+
+\vspace{-2mm}
+
+Measurement times were simulated randomly from a poisson process with an anverage of one measurement per year. Individuals had a maximum of 10 measurements, including baseline. 
+
+Survival times were simulated under the following cox model framework with a constant baseline hazard ($h_0(t) = 0.1$) : 
+\vspace{-7mm}
+
+\[
+h_i(t) = h_0(t)exp\{\alpha m_i(t)\} = 0.1exp\{0.6\cdot(-0.2 + 0.3t + b_{0i} + b_{1i}t)\}
+\]
+
+\vspace{-2mm}
+
+Censoring times were simulated randomly from a uniform(0, 10) distribution. If the censoring time occured before the survival time, the individual was classified as censored at that time, otherwise the individual was classified as having experienced death at the survival time. Any measurements after the censored or survival time, whichever came first, were removed. 
+
+The linear mixed model, for both the joint and two-stage processes, was fit with the lme function in the nlme R package, version 3.1-148. The cox model was fit with the coxph function in the survival R package, version 3.1-12. The joint model was fit assuming a propotional hazards model with a Weibull baseline hazard. The pseudo-adaptive Gauss-Hermite rule was used to improve computation time. The model was fit using the JM R package, version 1.4-8.
+
+To fit the two-stage model, we created start and stop times for intervals between each visit, which indicated the interval during with the event of death occurred. The Cox model was then fit using the subject-specific predictions of the true, unobserved longitudinal outcome values. 
+
+\vspace{-5mm}
+
+#### Comparison metrics 
+
+We compared the accuracy of the two modeling methodologies with the following variables: 
+
+\vspace{-5mm}
+
+\begin{itemize}
+  \item \textit{Empirical Bias:} The estimated difference between the average parameter value across all 500 simulations and the true parameter value.
+  \vspace{-2mm}
+  \item \textit{Asymptotic Standard Error:} The average model standard errors for the association, $\alpha$, and $\beta$ parameters.
+  \vspace{-2mm}
+  \item \textit{Empirical Standard Error:} The esimated standard deviation of each of the parameter value across all 500 simulations.
+  \vspace{-2mm}
+  \item \textit{Mean Square Error:} The average sum of squared differences between each estimated parameter and the true parameter value across all 500 simulations.
+  \vspace{-2mm}
+  \item \textit{95\% CI Coverage Rates:} The proportion of 95\% confidence intervals, for the association, $\alpha$, and $\beta$ parameters, that contain the true parameter value. 
+\end{itemize}
+
+\vspace{-3mm}
+
+In additon, the total model run time for each modeling method was computed and their average time was compared. 
+
+### Results 
+\vspace{-3mm}
+
+Model accuracy metrics by model are presented in Table 1. The magnitude of empirical bias is generally smaller for the joint model compared to the two stage model. 
+
+\scriptsize
+\textbf{Table 1. Model Accuracy Metrics}
+\normalsize
+
+\vspace{-3mm}
+```{r, echo = FALSE}
+sum <- data.frame(cbind(dat.2stage, dat.joint))
+rownames(sum) <- c("Bias", "Asy SE", "Emp SE", "MSE", "95% CI Coverage")
+colnames(sum) <- rep(c("Assoc", "B0", "B1", "Sigma", "A11", "A22"),2)
+
+
+knitr::kable(sum, booktabs = T, digits = Inf, format.args = list(digits = 2)) %>% 
+  kable_styling(latex_options = "striped", full_width = F, font_size = 6) %>% 
+  add_header_above(c(" ", "2 Stage Model" = 6, "Joint Model" = 6))
+```
+
+\vspace{-7mm}
+
+The average run time for the 2 stage model was `r round(time$TwoStage,2)` seconds compared to `r round(time$Joint,2)` seconds for the joint model. 
+
+### Discussion 
+
+The two-stage model had a larger bias than the joint model and had poor coverage of the time slope parameter. In the two-stage model, we are assuming that the longitudinal values are not changing between observation times. 
+
+### References 
+
+
+
+
+
+
