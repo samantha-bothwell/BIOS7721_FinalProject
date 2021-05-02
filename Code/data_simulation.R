@@ -280,14 +280,14 @@ mse.2stage <- data.frame(cbind(y = sum((dat.2stage$Assoc - alpha)^2)/sim,
   b1 = sum((dat.2stage$Beta1 - betas[2])^2)/sim,
   sigma = sum((dat.2stage$Sigma - sigma.y)^2)/sim,
   A11 = sum((dat.2stage$A11 - A[1])^2)/sim,
-  A22 = sum((dat.2stage$A22 - A[2])^2)/sim))
+  A22 = sum((dat.2stage$A22 - A[4])^2)/sim))
 
 mse.joint <- data.frame(cbind(y = sum((dat.joint$Assoc - alpha)^2)/sim,
   b0 = sum((dat.joint$Beta0 - betas[1])^2)/sim,
   b1 = sum((dat.joint$Beta1 - betas[2])^2)/sim,
   sigma = sum((dat.joint$Sigma - sigma.y)^2)/sim,
   A11 = sum((dat.joint$A11 - A[1])^2)/sim,
-  A22 = sum((dat.joint$A22 - A[2])^2)/sim))
+  A22 = sum((dat.joint$A22 - A[4])^2)/sim))
 
 ## Coverage rate 
 conf.2stage <- data.frame(cbind(b0.low = dat.2stage$Beta0 - 1.96*dat.2stage$SE0,

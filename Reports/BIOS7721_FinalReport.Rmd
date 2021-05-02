@@ -4,7 +4,8 @@ output:
 ---
 
 
-A Simulation Study to Compare Two-Stage Models and Joint Models  
+
+A Simulation Study to Compare Model Performance of Two-Stage Models and Joint Models  
 ========================================================
 Samantha Bothwell    |    BIOS 7721 : Joint Modeling    |    March 5th, 2021
 
@@ -22,17 +23,23 @@ library(kableExtra)
 
 \vspace{-3mm}
 
-Joint and two-stage models are are two methods of understanding the association between longitudinal outcomes and survival outcomes. 
+Joint and two-stage models are are two methods of understanding and evaluating the association between longitudinal outcomes and survival outcomes [1, 2]. The two-stage model is an extension of the extended cox model. The extended cox model assumes that the time-varying covariate is error free [1]. As this is likely an inaccurate assumption, the two-stage model accounts for measurement error by using the subject specific predictions of the true, unobserved outcomes from a linear mixed model [1]. By doing so, the two-stage model greatly reduces bias compared to the extended cox model and allows for multiple time-varying covariates [1]. A drawback to the two-stage approach, is that the uncertainty from the first stage is not carried through to the second stage and we do not account for informative censoring [1]. The joint model takes the two-stage model a step further to maintain the uncertainty of our association parameter [2]. In addtion, the two-stage model is valid only for exogenous time-dependent covariates while the joint model accounts for endogenous time-dependent covariates as well [2]. 
+
 \vspace{-5mm}
 
-### Methods 
+#### Aims and Hypotheis
+The aim of this study is to simulate data to understand the difference between the two-stage modeling approach compared to the joint modeling approch. We anticpate that the joint model will be less biased than the two-stage model since the joint model accounts for the uncertainty of all estimates and informative censoring. As we are not carrying our uncertainty to the survival stage of the two-stage process, we anticipate that the variability of the survival outcome will be underestimated in the two-stage model. We anticipate the computation time of the joint model to be larger due to the use of numerical integration with respect to the random effecs [3]. The methods section details the simulation used to evaluate these hypotheses. 
 
-#### Simulation 
 \vspace{-3mm}
 
-All analysis was performed in R, version 4.0.2. The simulation was conducted over 500 data sets, with 250 individuals each. Longitudinal outcomes were simulated under the following linear mixed model framework : 
+### Methods 
+\vspace{-3mm}
 
-\vspace{-8mm}
+#### Simulation 
+
+All analyses was performed in R, version 4.0.2. The simulation was conducted over 500 data sets, with 250 individuals each. Longitudinal outcomes were simulated under the following linear mixed model framework : 
+
+\vspace{-7mm}
 \[
 y_{ij} = -0.2 + 0.3t + b_{0i} + b_{1i}t + \epsilon_{ij} = m_i(t) + \epsilon_{ij}, \epsilon_{ij} \sim N(0, (0.5)^2), \hspace{2mm} (b_{0i}, b_{1i})' \sim N(0, A) \hspace{2mm} \textrm{with} \hspace{2mm} A = \begin{bmatrix}
 0.5 & 0\\
@@ -40,18 +47,18 @@ y_{ij} = -0.2 + 0.3t + b_{0i} + b_{1i}t + \epsilon_{ij} = m_i(t) + \epsilon_{ij}
 \end{bmatrix}
 \]
 
-\vspace{-2mm}
+\vspace{-1mm}
 
 Measurement times were simulated randomly from a poisson process with an anverage of one measurement per year. Individuals had a maximum of 10 measurements, including baseline. 
 
 Survival times were simulated under the following cox model framework with a constant baseline hazard ($h_0(t) = 0.1$) : 
-\vspace{-7mm}
+\vspace{-6mm}
 
 \[
 h_i(t) = h_0(t)exp\{\alpha m_i(t)\} = 0.1exp\{0.6\cdot(-0.2 + 0.3t + b_{0i} + b_{1i}t)\}
 \]
 
-\vspace{-2mm}
+\vspace{-1mm}
 
 Censoring times were simulated randomly from a uniform(0, 10) distribution. If the censoring time occured before the survival time, the individual was classified as censored at that time, otherwise the individual was classified as having experienced death at the survival time. Any measurements after the censored or survival time, whichever came first, were removed. 
 
@@ -59,40 +66,40 @@ The linear mixed model, for both the joint and two-stage processes, was fit with
 
 To fit the two-stage model, we created start and stop times for intervals between each visit, which indicated the interval during with the event of death occurred. The Cox model was then fit using the subject-specific predictions of the true, unobserved longitudinal outcome values. 
 
-\vspace{-5mm}
+\vspace{-4mm}
 
 #### Comparison metrics 
 
 We compared the accuracy of the two modeling methodologies with the following variables: 
 
-\vspace{-5mm}
+\vspace{-4mm}
 
 \begin{itemize}
   \item \textit{Empirical Bias:} The estimated difference between the average parameter value across all 500 simulations and the true parameter value.
-  \vspace{-2mm}
+  \vspace{-1mm}
   \item \textit{Asymptotic Standard Error:} The average model standard errors for the association, $\alpha$, and $\beta$ parameters.
-  \vspace{-2mm}
+  \vspace{-1mm}
   \item \textit{Empirical Standard Error:} The esimated standard deviation of each of the parameter value across all 500 simulations.
-  \vspace{-2mm}
+  \vspace{-1mm}
   \item \textit{Mean Square Error:} The average sum of squared differences between each estimated parameter and the true parameter value across all 500 simulations.
-  \vspace{-2mm}
+  \vspace{-1mm}
   \item \textit{95\% CI Coverage Rates:} The proportion of 95\% confidence intervals, for the association, $\alpha$, and $\beta$ parameters, that contain the true parameter value. 
 \end{itemize}
 
+\vspace{-2mm}
+
+In addition, the total model run time for each modeling method was computed and their average time was compared. 
+
 \vspace{-3mm}
 
-In additon, the total model run time for each modeling method was computed and their average time was compared. 
-
-### Results 
-\vspace{-3mm}
-
-Model accuracy metrics by model are presented in Table 1. The magnitude of empirical bias is generally smaller for the joint model compared to the two stage model. 
+### Results and Conclusions
+\vspace{-2mm}
 
 \scriptsize
 \textbf{Table 1. Model Accuracy Metrics}
 \normalsize
 
-\vspace{-3mm}
+\vspace{-2mm}
 ```{r, echo = FALSE}
 sum <- data.frame(cbind(dat.2stage, dat.joint))
 rownames(sum) <- c("Bias", "Asy SE", "Emp SE", "MSE", "95% CI Coverage")
@@ -104,16 +111,23 @@ knitr::kable(sum, booktabs = T, digits = Inf, format.args = list(digits = 2)) %>
   add_header_above(c(" ", "2 Stage Model" = 6, "Joint Model" = 6))
 ```
 
-\vspace{-7mm}
+\vspace{-2mm}
 
-The average run time for the 2 stage model was `r round(time$TwoStage,2)` seconds compared to `r round(time$Joint,2)` seconds for the joint model. 
+Model performance metrics are presented in Table 1. As hypothesized, the two-stage model had a larger bias in all estimates compared to the joint model. In the two-stage model, we are not carrying measurement error from the first stage to the second stage, which induces more bias into the association estimate. In addition, the two-stage model does not consider informative censoring, where subjects who experience the survival event may have different longitudinal trajectories than those who did not experience the event. We are accounting for both the measurement error and informative censoring in the joint model, so our bias is greatly reduced. The parameter MSEs are smaller for the joint model.  We also anticipated that the variability estimate of the association parameter from the two-stage model would be underestimated. Our simulation did not find this result. The standard error estimates of the association parameter from the two stage model were slightly, though not greatly, larger than in the joint model. The standard errors of the $\beta_1$ parameter were smaller in the two-stage model, however. This fact, in combination with a larger bias, resulted in the two-stage model having poorer coverage of the time slope parameter, $\beta_1$. In the two-stage model, we are assuming the the longitudinal outcome is not changing between measurement times, which biases our $\beta_1$ estimate. 
 
-### Discussion 
+For more reliable and less biased parameter estimates, the joint model has better methodologies compared to the two-stage model and should be generally recommended. A benefit to the two-stage model is its computation time over the joint model. The average run time for the 2 stage model was `r round(time$TwoStage,2)` seconds compared to `r round(time$Joint,2)` seconds for the joint model. If the time-varying covariate of interest is endogenous then the joint modeling framework is better equipped to handle this analysis with smaller bias.  
 
-The two-stage model had a larger bias than the joint model and had poor coverage of the time slope parameter. In the two-stage model, we are assuming that the longitudinal values are not changing between observation times. 
+\vspace{-3mm}
 
 ### References 
 
+\vspace{-2mm}
+
+[1] Krithika Suresh. (2021). Time varying covariates & Two stage Models.
+
+[2] Krithika Suresh. (2021). The Basic Joint Model.
+
+[3] Rizopoulos, D. (2012). Fast fitting of joint models for longitudinal and event time data using a pseudo-adaptive Gaussian quadrature rule. Computational Statistics & Data Analysis, 56(3), 491–501. https://doi.org/10.1016/j.csda.2011.09.007
 
 
 
